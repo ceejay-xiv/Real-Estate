@@ -1,0 +1,153 @@
+
+// to create a collection for Dept table
+
+db.createCollection("Dept")
+
+
+// to create a collection for Emp table
+
+db.createCollection("Emp")
+
+
+// to create a collection for Proj table
+
+db.createCollection("Proj")
+
+
+// to create a collection for Alloc table
+
+db.createCollection("Alloc")
+
+
+
+// insertion of data in Dept
+db.Dept.insertMany( [ { _id: "D1", dept_name: "Production", manager_id: null, budget: 100000}, 
+	{ _id: "D2", dept_name: "Sales", manager_id: "E5",budget: 250000 },
+	{ _id: "D3", dept_name: "Accounts",  manager_id: "E9", budget: 95000 },
+	{ _id: "D4", dept_name: "Admin", manager_id: "E8", budget: 156000 }, 
+	{ _id: "D5", dept_name: "Personnel", manager_id: "E7", budget: 196000 } ]);
+
+
+// just check if all gone in successfully
+// just like: select * from dept
+
+db.Dept.find();
+
+// insertion of data in Emp
+db.Emp.insertMany( 
+[ 
+{_id: "E1", emp_name: "Smith", dept_id: "D1", salary: 9900, marital_status: "W"},
+{_id: "E2", emp_name: "Jones", dept_id: "D2", salary: 13200, marital_status: "M"},
+{_id: "E3", emp_name: "Roberts", dept_id: "D2", salary: 11000, marital_status: "M"},
+{_id: "E4", emp_name: "Evans'", dept_id: "D3", salary: 16500, marital_status: "S"},
+{_id: "E5", emp_name: "Brown", dept_id: "D3", salary: 27500, marital_status: "S"},
+{_id: "E6", emp_name: "Green", dept_id: "D3", salary: 13200, marital_status: "M"},
+{_id: "E7", emp_name: "McDougal", dept_id: "D4", salary: 17600, marital_status: "D"},
+{_id: "E8", emp_name: "McNally", dept_id: "D5", salary: 12100, marital_status: "M"},
+{_id: "E9", emp_name: "Fletcher", dept_id: "D5", salary: 13200, marital_status: "S"}
+]);
+
+// just check if all gone in successfully
+// just like: select * from emp
+
+db.Emp.find();
+
+db.Proj.insertMany( 
+[ 
+{_id: "P1",  dept_id: "D1", start_date: ISODate("2008-04-20"), deadline: ISODate("2009-02-23")},
+{_id: "P2",  dept_id: "D1", start_date: ISODate("2009-01-21"), deadline: ISODate("2009-05-14")},
+{_id: "P3",  dept_id: "D2", start_date: ISODate("2008-02-02"), deadline: ISODate("2009-03-03")},
+{_id: "P4",  dept_id: "D3", start_date: ISODate("2007-12-11"), deadline: ISODate("2009-01-01")},
+{_id: "P5",  dept_id: "D4", start_date: ISODate("2006-10-08"), deadline: ISODate("2008-12-31")},
+{_id: "P6",  dept_id: null, start_date: ISODate("2006-10-09"), deadline: ISODate("2009-12-30")}
+]);
+
+// just check if all gone in successfully
+// just like: select * from proj
+
+db.Proj.find();
+  
+
+// insertion of data in Alloc
+
+db.Alloc.insertMany( [
+{emp_id: "E1", proj_id: "P1"},
+{emp_id: "E1", proj_id: "P2"},
+{emp_id: "E2", proj_id: "P1"},
+{emp_id: "E2", proj_id: "P5"},
+{emp_id: "E4", proj_id: "P4"},
+{emp_id: "E5", proj_id: "P4"},
+{emp_id: "E6", proj_id: "P4"},
+{emp_id: "E9", proj_id: "P4"},
+{emp_id: "E5", proj_id: "P3"},
+{emp_id: "E7", proj_id: "P3"}
+]);
+
+
+// just check if all gone in successfully
+// just like: select * from Alloc
+
+db.Alloc.find();
+  
+
+// some JOIN queries
+
+// General Format
+
+//  {
+//    $lookup:
+//    {
+//       from: <collection to join>,
+//       localField: <field from the input documents>,
+//       foreignField: <field from the documents of the "from" collection>,
+//       as: <output array field>
+//     }
+//  }
+
+// Join dept with emp on manager_id = emp._id
+
+db.Dept.aggregate ([
+ {
+   $lookup:
+     {
+       from: "Emp",
+       localField: "manager_id",
+       foreignField: "_id",
+       as: "manager"
+     }
+ }
+]);
+
+
+// join emp with dept on emp.dept_id = dept._id
+
+db.Emp.aggregate ([
+ {
+   $lookup:
+     {
+       from: "Dept",
+       localField: "dept_id",
+       foreignField: "_id",
+       as: "department"
+     }
+ }
+]);
+
+// These queries create a lot more details than what we may want
+// E.G. we want to display the names of employee and their department names only
+// We need to create a view first
+db.createView (
+   "Emp_Dept",
+   "Emp",
+   [
+     { $lookup: { from: "Dept",
+       localField: "dept_id",
+       foreignField: "_id",
+       as: "department"}}
+   ]
+);
+
+// now lets display emp_name and dept_name
+
+db.Emp_Dept.find({}, {emp_name: 1, "department.dept_name": 1});
+
